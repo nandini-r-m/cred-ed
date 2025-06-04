@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SafetyBot</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f0f2f5;
+        margin: 0;
+      }
+      .chat-container {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 90%;
+        max-width: 500px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .chat-header {
+        background-color: #007bff;
+        color: white;
+        padding: 15px;
+        font-size: 1.2em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+      }
+      .exit-button {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 0.9em;
+        cursor: pointer;
+      }
+      .chat-box {
+        flex-grow: 1;
+        padding: 20px;
+        overflow-y: auto;
+        max-height: 400px;
+        background-color: #e9ecef;
+      }
+      .message {
+        margin-bottom: 10px;
+        padding: 8px 12px;
+        border-radius: 15px;
+        max-width: 70%;
+        word-wrap: break-word;
+      }
+      .user-message {
+        background-color: #dcf8c6;
+        align-self: flex-end;
+        margin-left: auto;
+        text-align: right;
+      }
+      .bot-message {
+        background-color: #ffffff;
+        align-self: flex-start;
+        text-align: left;
+        border: 1px solid #ddd;
+      }
+      .chat-input-container {
+        display: flex;
+        padding: 15px;
+        border-top: 1px solid #eee;
+      }
+      .chat-input {
+        flex-grow: 1;
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 20px;
+        margin-right: 10px;
+        font-size: 1em;
+      }
+      .chat-send-button {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 20px;
+        padding: 10px 15px;
+        cursor: pointer;
+        font-size: 1em;
+      }
+      .chat-send-button:hover {
+        background-color: #218838;
+      }
+      .quick-options {
+        text-align: center;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        background-color: #f8f9fa;
+      }
+      .quick-options button {
+        margin: 5px;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 20px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        font-size: 0.9em;
+      }
+      .quick-options button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container">
+      <div class="chat-header">
+        <span>SafetyBot</span>
+        <button
+          class="exit-button"
+          onclick="window.location.href='https://www.google.com'"
+        >
+          Exit
+        </button>
+      </div>
+
+      <div class="quick-options">
+        <button onclick="sendPredefined('I feel unsafe')">
+          What to do if I feel unsafe
+        </button>
+        <button onclick="sendPredefined('How to file a police complaint')">
+          How to file a police complaint
+        </button>
+        <button onclick="sendPredefined('What are my rights?')">
+          Know your rights
+        </button>
+      </div>
+
+      <div class="chat-box" id="chat-box">
+        {% if intro %}
+        <div class="message bot-message">{{ intro }}</div>
+        {% endif %}
+      </div>
+
+      <div class="chat-input-container">
+        <input
+          type="text"
+          id="user-input"
+          class="chat-input"
+          placeholder="Type your message..."
+        />
+        <button id="send-button" class="chat-send-button">Send</button>
+      </div>
+    </div>
+
+    <script>
+      document
+        .getElementById("send-button")
+        .addEventListener("click", sendMessage);
+      document
+        .getElementById("user-input")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            sendMessage();
+          }
+        });
+
+      function sendMessage() {
+        const userInput = document.getElementById("user-input");
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        displayMessage(message, "user");
+        userInput.value = "";
+
+        fetch("/get?msg=" + encodeURIComponent(message))
+          .then((response) => response.text())
+          .then((data) => {
+            if (data.startsWith("EMERGENCY_REDIRECT:")) {
+              const emergencyMessage = data.replace("EMERGENCY_REDIRECT: ", "");
+              displayMessage(emergencyMessage, "bot");
+            } else {
+              displayMessage(data, "bot");
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            displayMessage(
+              "Sorry, I'm having trouble connecting right now.",
+              "bot"
+            );
+          });
+      }
+
+      function displayMessage(text, sender) {
+        const chatBox = document.getElementById("chat-box");
+        const messageDiv = document.createElement("div");
+        messageDiv.classList.add("message", sender + "-message");
+        messageDiv.textContent = text;
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      function sendPredefined(text) {
+        document.getElementById("user-input").value = text;
+        sendMessage();
+      }
+    </script>
+  </body>
+</html>
